@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sanity/client": "^7.23.0",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.21.0",
     "next": "16.2.9",
+    "next-sanity": "^13.1.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp, Doctor, ServiceItem, BlogItem, Testimonial, Appointment } from "@/context/AppContext";
 import Logo from "@/components/Logo";
+import { savePopupSettings } from "@/app/actions/popup";
 import {
   Settings,
   Users,
@@ -100,11 +101,21 @@ export default function AdminPanel() {
     image: ""
   });
 
-  // Pop-up form state
-  const [popupImageUrl, setPopupImageUrl] = useState(popupSettings.imageUrl);
-  const [popupExpDate, setPopupExpDate] = useState(popupSettings.expirationDate);
-  const [popupActive, setPopupActive] = useState(popupSettings.active);
+  // Pop-up form state (starts uninitialized to prevent layout flash)
+  const [popupImageUrl, setPopupImageUrl] = useState("");
+  const [popupExpDate, setPopupExpDate] = useState("");
+  const [popupActive, setPopupActive] = useState(false);
   const [heroBgInput, setHeroBgInput] = useState(heroBgImage);
+  const [isSavingPopup, setIsSavingPopup] = useState(false);
+
+  // Sync form states only when settings data is fully present
+  useEffect(() => {
+    if (isLoaded && popupSettings && popupSettings.imageUrl) {
+      setPopupImageUrl(popupSettings.imageUrl);
+      setPopupExpDate(popupSettings.expirationDate);
+      setPopupActive(popupSettings.active);
+    }
+  }, [isLoaded, popupSettings]);
 
   // Telegram Settings state
   const [botTokenInput, setBotTokenInput] = useState(telegramSettings.botToken);
@@ -127,12 +138,12 @@ export default function AdminPanel() {
     }
   };
 
-  if (!isLoaded) {
+  if (!isLoaded || !popupImageUrl) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-500 font-bold text-sm">Yüklənir...</p>
+          <p className="text-slate-500 font-bold text-sm">Məlumatlar yüklənir...</p>
         </div>
       </div>
     );
@@ -147,14 +158,33 @@ export default function AdminPanel() {
   };
 
   // Popup Submit
-  const handlePopupSave = (e: React.FormEvent) => {
+  const handlePopupSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updatePopupSettings({
-      imageUrl: popupImageUrl,
-      expirationDate: popupExpDate,
-      active: popupActive
-    });
-    alert("Pop-up parametrləri uğurla yeniləndi!");
+    setIsSavingPopup(true);
+    try {
+      const res = await savePopupSettings({
+        active: popupActive,
+        expirationDate: popupExpDate,
+        imageUrl: popupImageUrl,
+        imageRef: popupSettings.imageRef,
+      });
+
+      if (res.success && res.data) {
+        updatePopupSettings({
+          imageUrl: res.data.imageUrl,
+          expirationDate: res.data.expirationDate,
+          active: res.data.active,
+          imageRef: res.data.imageRef,
+        });
+        alert("Pop-up parametrləri uğurla yeniləndi!");
+      } else {
+        alert("Xəta baş verdi: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Xəta baş verdi: " + (err.message || String(err)));
+    } finally {
+      setIsSavingPopup(false);
+    }
   };
 
   // Telegram Submit
@@ -797,10 +827,15 @@ export default function AdminPanel() {
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="inline-flex items-center gap-2 bg-[#2B4C9B] hover:bg-[#1f3770] text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-colors"
+                      disabled={isSavingPopup}
+                      className="inline-flex items-center gap-2 bg-[#2B4C9B] hover:bg-[#1f3770] disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-colors"
                     >
-                      <Save className="h-4 w-4" />
-                      Dəyişiklikləri Yadda Saxla
+                      {isSavingPopup ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {isSavingPopup ? "Yadda saxlanılır..." : "Dəyişiklikləri Yadda Saxla"}
                     </button>
                   </div>
                 </form>

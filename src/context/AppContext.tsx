@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { getPopupSettings } from "@/app/actions/popup";
 
 export interface Doctor {
   id: string;
@@ -41,6 +42,7 @@ export interface PopupSettings {
   imageUrl: string;
   expirationDate: string;
   active: boolean;
+  imageRef?: string;
 }
 
 export interface Appointment {
@@ -336,62 +338,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Load from localStorage on client-side
   useEffect(() => {
-    try {
-      const storedDoctors = localStorage.getItem("mc_doctors");
-      const storedServices = localStorage.getItem("mc_services");
-      const storedBlogs = localStorage.getItem("mc_blogs");
-      const storedTestimonials = localStorage.getItem("mc_testimonials");
-      const storedPopup = localStorage.getItem("mc_popup");
+    const loadInitialData = async () => {
+      try {
+        const storedDoctors = localStorage.getItem("mc_doctors");
+        const storedServices = localStorage.getItem("mc_services");
+        const storedBlogs = localStorage.getItem("mc_blogs");
+        const storedTestimonials = localStorage.getItem("mc_testimonials");
 
-      if (storedDoctors) {
-        let parsed = JSON.parse(storedDoctors) as Doctor[];
-        let migrated = false;
-        parsed = parsed.map((doc) => {
-          if (doc.id === "doc-1" && doc.image.includes("unsplash.com")) {
-            migrated = true;
-            return { ...doc, image: "/images/doctor_male_elcin.png" };
+        if (storedDoctors) {
+          let parsed = JSON.parse(storedDoctors) as Doctor[];
+          let migrated = false;
+          parsed = parsed.map((doc) => {
+            if (doc.id === "doc-1" && doc.image.includes("unsplash.com")) {
+              migrated = true;
+              return { ...doc, image: "/images/doctor_male_elcin.png" };
+            }
+            if (doc.id === "doc-2" && doc.image.includes("unsplash.com")) {
+              migrated = true;
+              return { ...doc, image: "/images/doctor_female_aynur.png" };
+            }
+            return doc;
+          });
+          setDoctors(parsed);
+          if (migrated) {
+            localStorage.setItem("mc_doctors", JSON.stringify(parsed));
           }
-          if (doc.id === "doc-2" && doc.image.includes("unsplash.com")) {
-            migrated = true;
-            return { ...doc, image: "/images/doctor_female_aynur.png" };
-          }
-          return doc;
-        });
-        setDoctors(parsed);
-        if (migrated) {
-          localStorage.setItem("mc_doctors", JSON.stringify(parsed));
+        } else {
+          localStorage.setItem("mc_doctors", JSON.stringify(defaultDoctors));
         }
-      } else {
-        localStorage.setItem("mc_doctors", JSON.stringify(defaultDoctors));
+
+        if (storedServices) setServices(JSON.parse(storedServices));
+        else localStorage.setItem("mc_services", JSON.stringify(defaultServices));
+
+        if (storedBlogs) setBlogs(JSON.parse(storedBlogs));
+        else localStorage.setItem("mc_blogs", JSON.stringify(defaultBlogs));
+
+        if (storedTestimonials) setTestimonials(JSON.parse(storedTestimonials));
+        else localStorage.setItem("mc_testimonials", JSON.stringify(defaultTestimonials));
+
+        // Load popup settings from Sanity first
+        try {
+          const sanityPopup = await getPopupSettings();
+          if (sanityPopup) {
+            setPopupSettings({
+              active: sanityPopup.active ?? defaultPopup.active,
+              expirationDate: sanityPopup.expirationDate ?? defaultPopup.expirationDate,
+              imageUrl: sanityPopup.imageUrl ?? defaultPopup.imageUrl,
+              imageRef: sanityPopup.imageRef,
+            });
+          } else {
+            const storedPopup = localStorage.getItem("mc_popup");
+            if (storedPopup) setPopupSettings(JSON.parse(storedPopup));
+            else setPopupSettings(defaultPopup);
+          }
+        } catch (sanityError) {
+          console.error("Failed to load popup settings from Sanity:", sanityError);
+          const storedPopup = localStorage.getItem("mc_popup");
+          if (storedPopup) setPopupSettings(JSON.parse(storedPopup));
+          else setPopupSettings(defaultPopup);
+        }
+
+        const storedAppointments = localStorage.getItem("mc_appointments");
+        if (storedAppointments) setAppointments(JSON.parse(storedAppointments));
+        else localStorage.setItem("mc_appointments", JSON.stringify(defaultAppointments));
+
+        const storedHeroBg = localStorage.getItem("mc_hero_bg");
+        if (storedHeroBg) setHeroBgImage(storedHeroBg);
+        else localStorage.setItem("mc_hero_bg", "/images/hero-bg.png");
+
+        const storedTelegram = localStorage.getItem("mc_telegram");
+        if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
+        else localStorage.setItem("mc_telegram", JSON.stringify(defaultTelegram));
+      } catch (e) {
+        console.error("Error accessing localStorage:", e);
       }
+      setIsLoaded(true);
+    };
 
-      if (storedServices) setServices(JSON.parse(storedServices));
-      else localStorage.setItem("mc_services", JSON.stringify(defaultServices));
-
-      if (storedBlogs) setBlogs(JSON.parse(storedBlogs));
-      else localStorage.setItem("mc_blogs", JSON.stringify(defaultBlogs));
-
-      if (storedTestimonials) setTestimonials(JSON.parse(storedTestimonials));
-      else localStorage.setItem("mc_testimonials", JSON.stringify(defaultTestimonials));
-
-      if (storedPopup) setPopupSettings(JSON.parse(storedPopup));
-      else localStorage.setItem("mc_popup", JSON.stringify(defaultPopup));
-
-      const storedAppointments = localStorage.getItem("mc_appointments");
-      if (storedAppointments) setAppointments(JSON.parse(storedAppointments));
-      else localStorage.setItem("mc_appointments", JSON.stringify(defaultAppointments));
-
-      const storedHeroBg = localStorage.getItem("mc_hero_bg");
-      if (storedHeroBg) setHeroBgImage(storedHeroBg);
-      else localStorage.setItem("mc_hero_bg", "/images/hero-bg.png");
-
-      const storedTelegram = localStorage.getItem("mc_telegram");
-      if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
-      else localStorage.setItem("mc_telegram", JSON.stringify(defaultTelegram));
-    } catch (e) {
-      console.error("Error accessing localStorage:", e);
-    }
-    setIsLoaded(true);
+    loadInitialData();
   }, []);
 
   // Update localStorage helper
