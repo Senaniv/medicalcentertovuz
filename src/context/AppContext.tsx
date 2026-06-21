@@ -101,7 +101,7 @@ const defaultDoctors: Doctor[] = [
     id: "doc-1",
     name: "Dr. Elçin Müseyibov",
     specialty: "Həkim-Laborant",
-    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop",
+    image: "/images/doctor_male_elcin.png",
     experience: "15 il",
     education: "Azərbaycan Tibb Universiteti",
   },
@@ -109,7 +109,7 @@ const defaultDoctors: Doctor[] = [
     id: "doc-2",
     name: "Dr. Aynur Qarayeva",
     specialty: "Fizioterapevt-Reabilitoloq",
-    image: "https://images.unsplash.com/photo-1594824813573-246434de83fb?q=80&w=400&auto=format&fit=crop",
+    image: "/images/doctor_female_aynur.png",
     experience: "12 il",
     education: "Hacettepe Üniversitesi (Türkiyə)",
   },
@@ -320,8 +320,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedTestimonials = localStorage.getItem("mc_testimonials");
       const storedPopup = localStorage.getItem("mc_popup");
 
-      if (storedDoctors) setDoctors(JSON.parse(storedDoctors));
-      else localStorage.setItem("mc_doctors", JSON.stringify(defaultDoctors));
+      if (storedDoctors) {
+        let parsed = JSON.parse(storedDoctors) as Doctor[];
+        let migrated = false;
+        parsed = parsed.map((doc) => {
+          if (doc.id === "doc-1" && doc.image.includes("unsplash.com")) {
+            migrated = true;
+            return { ...doc, image: "/images/doctor_male_elcin.png" };
+          }
+          if (doc.id === "doc-2" && doc.image.includes("unsplash.com")) {
+            migrated = true;
+            return { ...doc, image: "/images/doctor_female_aynur.png" };
+          }
+          return doc;
+        });
+        setDoctors(parsed);
+        if (migrated) {
+          localStorage.setItem("mc_doctors", JSON.stringify(parsed));
+        }
+      } else {
+        localStorage.setItem("mc_doctors", JSON.stringify(defaultDoctors));
+      }
 
       if (storedServices) setServices(JSON.parse(storedServices));
       else localStorage.setItem("mc_services", JSON.stringify(defaultServices));

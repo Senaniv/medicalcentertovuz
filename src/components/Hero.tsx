@@ -266,7 +266,7 @@ export default function Hero() {
 
                   {/* Submit Type Selection */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Təsdiq Üsulu *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Təsdiq (Əlaqə vasitəsi) *</label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
