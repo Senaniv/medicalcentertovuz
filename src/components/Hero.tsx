@@ -7,7 +7,7 @@ import confetti from "canvas-confetti";
 import DatePicker from "./DatePicker";
 
 export default function Hero() {
-  const { services, addAppointment, heroBgImage } = useApp();
+  const { services, addAppointment, heroBgImage, sendTelegramNotification } = useApp();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -41,6 +41,16 @@ export default function Hero() {
       notes: formData.notes,
       submitType: formData.submitType,
     });
+
+    // Send Telegram Notification to Admin
+    sendTelegramNotification(
+      randCode,
+      formData.name,
+      formData.phone,
+      formData.date,
+      formData.submitType,
+      formData.serviceId
+    );
 
     setLastCode(randCode);
     setLastSubmitType(formData.submitType);

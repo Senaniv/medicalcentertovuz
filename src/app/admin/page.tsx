@@ -37,11 +37,13 @@ export default function AdminPanel() {
     popupSettings,
     appointments,
     heroBgImage,
+    telegramSettings,
     isLoaded,
     updatePopupSettings,
     updateAppointmentStatus,
     deleteAppointment,
     updateHeroBgImage,
+    updateTelegramSettings,
     addDoctor,
     updateDoctor,
     deleteDoctor,
@@ -104,6 +106,11 @@ export default function AdminPanel() {
   const [popupActive, setPopupActive] = useState(popupSettings.active);
   const [heroBgInput, setHeroBgInput] = useState(heroBgImage);
 
+  // Telegram Settings state
+  const [botTokenInput, setBotTokenInput] = useState(telegramSettings.botToken);
+  const [chatIdInput, setChatIdInput] = useState(telegramSettings.chatId);
+  const [telegramActive, setTelegramActive] = useState(telegramSettings.active);
+
   // Appointments Search & Filter States
   const [appSearch, setAppSearch] = useState("");
   const [appFilterStatus, setAppFilterStatus] = useState<string>("all");
@@ -148,6 +155,17 @@ export default function AdminPanel() {
       active: popupActive
     });
     alert("Pop-up parametrləri uğurla yeniləndi!");
+  };
+
+  // Telegram Submit
+  const handleTelegramSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateTelegramSettings({
+      botToken: botTokenInput,
+      chatId: chatIdInput,
+      active: telegramActive
+    });
+    alert("Telegram bildiriş parametrləri uğurla yeniləndi!");
   };
 
   // Doctor Action
@@ -858,6 +876,78 @@ export default function AdminPanel() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Telegram Notifications Settings */}
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                  <PhoneCall className="h-5 w-5 text-primary" />
+                  Telegram Bildiriş Nizamlamaları
+                </h2>
+                <p className="text-slate-500 text-xs font-semibold">
+                  Yeni müraciətlər gəldiyi zaman Telegram bot vasitəsilə telefonunuza dərhal səsli bildiriş almaq üçün bura Bot Token və Chat ID qeyd edin.
+                </p>
+
+                <form onSubmit={handleTelegramSave} className="space-y-4 pt-2 border-t border-slate-100">
+                  {/* Bot Token */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 font-sans">
+                      Telegram Bot Token
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Məs: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                      value={botTokenInput}
+                      onChange={(e) => setBotTokenInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 text-sm bg-white"
+                    />
+                    <p className="text-[9px] text-slate-400 mt-1 font-semibold">
+                      Telegram-da @BotFather vasitəsilə yaratdığınız botun tokenini bura daxil edin.
+                    </p>
+                  </div>
+
+                  {/* Chat ID */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5 font-sans">
+                      Telegram Chat ID (və ya Qrup ID)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Məs: 987654321 və ya -100123456789"
+                      value={chatIdInput}
+                      onChange={(e) => setChatIdInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 text-sm bg-white"
+                    />
+                    <p className="text-[9px] text-slate-400 mt-1 font-semibold">
+                      Botdan bildiriş alacaq şəxsi hesabınızın və ya əlavə etdiyiniz qrupun ID nömrəsini daxil edin.
+                    </p>
+                  </div>
+
+                  {/* Active Switch */}
+                  <div className="flex items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      id="telegramActive"
+                      checked={telegramActive}
+                      onChange={(e) => setTelegramActive(e.target.checked)}
+                      className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary/20 cursor-pointer"
+                    />
+                    <label htmlFor="telegramActive" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                      Telegram bildirişləri aktiv olsun
+                    </label>
+                  </div>
+
+                  {/* Save button */}
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 bg-[#2B4C9B] hover:bg-[#1f3770] text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-colors cursor-pointer"
+                    >
+                      <Save className="h-4 w-4" />
+                      Nizamlamaları Yadda Saxla
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

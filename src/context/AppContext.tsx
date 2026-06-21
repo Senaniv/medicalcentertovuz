@@ -56,6 +56,12 @@ export interface Appointment {
   createdAt: string;
 }
 
+export interface TelegramSettings {
+  botToken: string;
+  chatId: string;
+  active: boolean;
+}
+
 interface AppContextType {
   doctors: Doctor[];
   services: ServiceItem[];
@@ -64,11 +70,21 @@ interface AppContextType {
   popupSettings: PopupSettings;
   appointments: Appointment[];
   heroBgImage: string;
+  telegramSettings: TelegramSettings;
   isLoaded: boolean;
   
   // Pop-up Settings
   updatePopupSettings: (settings: Partial<PopupSettings>) => void;
   updateHeroBgImage: (url: string) => void;
+  updateTelegramSettings: (settings: Partial<TelegramSettings>) => void;
+  sendTelegramNotification: (
+    appId: string,
+    name: string,
+    phone: string,
+    date: string,
+    submitType: "whatsapp" | "call",
+    serviceId: string
+  ) => Promise<void>;
   
   // Appointments CRUD
   addAppointment: (app: Omit<Appointment, "status" | "createdAt">) => void;
@@ -299,6 +315,12 @@ const defaultAppointments: Appointment[] = [
   }
 ];
 
+const defaultTelegram: TelegramSettings = {
+  botToken: "",
+  chatId: "",
+  active: false,
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -309,6 +331,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [popupSettings, setPopupSettings] = useState<PopupSettings>(defaultPopup);
   const [appointments, setAppointments] = useState<Appointment[]>(defaultAppointments);
   const [heroBgImage, setHeroBgImage] = useState<string>("/images/hero-bg.png");
+  const [telegramSettings, setTelegramSettings] = useState<TelegramSettings>(defaultTelegram);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on client-side
@@ -361,6 +384,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedHeroBg = localStorage.getItem("mc_hero_bg");
       if (storedHeroBg) setHeroBgImage(storedHeroBg);
       else localStorage.setItem("mc_hero_bg", "/images/hero-bg.png");
+
+      const storedTelegram = localStorage.getItem("mc_telegram");
+      if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
+      else localStorage.setItem("mc_telegram", JSON.stringify(defaultTelegram));
     } catch (e) {
       console.error("Error accessing localStorage:", e);
     }
@@ -534,6 +561,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncToStorage("mc_hero_bg", url);
   };
 
+  const updateTelegramSettings = (settings: Partial<TelegramSettings>) => {
+    setTelegramSettings((prev) => {
+      const updated = { ...prev, ...settings };
+      syncToStorage("mc_telegram", updated);
+      return updated;
+    });
+  };
+
+  const sendTelegramNotification = async (
+    appId: string,
+    name: string,
+    phone: string,
+    date: string,
+    submitType: "whatsapp" | "call",
+    serviceId: string
+  ) => {
+    try {
+      if (!telegramSettings.active || !telegramSettings.botToken || !telegramSettings.chatId) return;
+
+      const serviceName = services.find((s) => s.id === serviceId)?.title || "Şöbə seçilməyib";
+      const submitText = submitType === "whatsapp" ? "WhatsApp ilə təsdiq" : "Zənglə təsdiq";
+
+      const textMessage = `🔔 *YENİ RANDEVU!*\n\n👤 *Pasiyent:* ${name}\n📞 *Telefon:* ${phone}\n🏷️ *Xidmət:* ${serviceName}\n📅 *Tarix:* ${date}\n💬 *Təsdiq vasitəsi:* ${submitText}\n🔑 *Kod:* ${appId}`;
+
+      const url = `https://api.telegram.org/bot${telegramSettings.botToken}/sendMessage`;
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: telegramSettings.chatId,
+          text: textMessage,
+          parse_mode: "Markdown",
+        }),
+      });
+    } catch (err) {
+      console.error("Error sending Telegram message:", err);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -544,9 +612,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         popupSettings,
         appointments,
         heroBgImage,
+        telegramSettings,
         isLoaded,
         updatePopupSettings,
         updateHeroBgImage,
+        updateTelegramSettings,
+        sendTelegramNotification,
         addAppointment,
         updateAppointmentStatus,
         deleteAppointment,
