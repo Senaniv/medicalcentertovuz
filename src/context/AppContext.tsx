@@ -683,7 +683,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const serviceName = services.find((s) => s.id === serviceId)?.title || "Şöbə seçilməyib";
       const submitText = submitType === "whatsapp" ? "WhatsApp ilə təsdiq" : "Zənglə təsdiq";
 
-      const textMessage = `🔔 *YENİ RANDEVU!*\n\n👤 *Pasiyent:* ${name}\n📞 *Telefon:* ${phone}\n🏷️ *Xidmət:* ${serviceName}\n📅 *Tarix:* ${date}\n💬 *Təsdiq vasitəsi:* ${submitText}\n🔑 *Kod:* ${appId}`;
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://medicalcentertovuz.vercel.app";
+      const adminLink = `${origin}/admin?code=${appId}`;
+
+      const textMessage = `🔔 *YENİ RANDEVU!*\n\n👤 *Pasiyent:* ${name}\n📞 *Telefon:* ${phone}\n🏷️ *Xidmət:* ${serviceName}\n📅 *Tarix:* ${date}\n💬 *Təsdiq vasitəsi:* ${submitText}\n🔑 *Kod:* ${appId}\n\n🔗 [Randevunu İdarə Et](${adminLink})`;
 
       const url = `https://api.telegram.org/bot${telegramSettings.botToken}/sendMessage`;
       await fetch(url, {

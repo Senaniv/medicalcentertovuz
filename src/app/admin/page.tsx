@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useApp, Doctor, ServiceItem, BlogItem, Testimonial, Appointment } from "@/context/AppContext";
 import Logo from "@/components/Logo";
 import { savePopupSettings } from "@/app/actions/popup";
@@ -29,7 +30,7 @@ import {
 
 type ActiveTab = "popup" | "appointments" | "doctors" | "services" | "blogs" | "testimonials";
 
-export default function AdminPanel() {
+function AdminPanelContent() {
   const {
     doctors,
     services,
@@ -58,6 +59,9 @@ export default function AdminPanel() {
     updateTestimonial,
     deleteTestimonial
   } = useApp();
+
+  const searchParams = useSearchParams();
+  const codeParam = searchParams.get("code");
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("popup");
 
@@ -123,8 +127,12 @@ export default function AdminPanel() {
         setChatIdInput(telegramSettings.chatId);
         setTelegramActive(telegramSettings.active);
       }
+      if (codeParam) {
+        setAppSearch(codeParam);
+        setActiveTab("appointments");
+      }
     }
-  }, [isLoaded, popupSettings, telegramSettings]);
+  }, [isLoaded, popupSettings, telegramSettings, codeParam]);
 
   // Telegram Settings state (starts empty/false to avoid flashing default settings)
   const [botTokenInput, setBotTokenInput] = useState("");
@@ -1765,5 +1773,20 @@ export default function AdminPanel() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminPanel() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-bold text-sm">Yüklənir...</p>
+        </div>
+      </div>
+    }>
+      <AdminPanelContent />
+    </Suspense>
   );
 }
