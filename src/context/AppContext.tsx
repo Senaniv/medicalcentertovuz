@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { getPopupSettings } from "@/app/actions/popup";
 import { getDoctors, saveDoctor, deleteDoctorAction } from "@/app/actions/doctors";
 import { getTelegramSettings, saveTelegramSettings } from "@/app/actions/telegram";
+import { getServices, saveService, deleteServiceAction } from "@/app/actions/services";
+import { getBlogs, saveBlog, deleteBlogAction } from "@/app/actions/blogs";
 
 export interface Doctor {
   id: string;
@@ -102,14 +104,14 @@ interface AppContextType {
   deleteDoctor: (id: string) => Promise<{ success: boolean; error?: string }>;
   
   // Services CRUD
-  addService: (service: Omit<ServiceItem, "id">) => void;
-  updateService: (id: string, service: Partial<ServiceItem>) => void;
-  deleteService: (id: string) => void;
+  addService: (service: Omit<ServiceItem, "id">) => Promise<{ success: boolean; data?: ServiceItem; error?: string }>;
+  updateService: (id: string, service: Partial<ServiceItem>) => Promise<{ success: boolean; data?: ServiceItem; error?: string }>;
+  deleteService: (id: string) => Promise<{ success: boolean; error?: string }>;
   
   // Blogs CRUD
-  addBlog: (blog: Omit<BlogItem, "id">) => void;
-  updateBlog: (id: string, blog: Partial<BlogItem>) => void;
-  deleteBlog: (id: string) => void;
+  addBlog: (blog: Omit<BlogItem, "id">) => Promise<{ success: boolean; data?: BlogItem; error?: string }>;
+  updateBlog: (id: string, blog: Partial<BlogItem>) => Promise<{ success: boolean; data?: BlogItem; error?: string }>;
+  deleteBlog: (id: string) => Promise<{ success: boolean; error?: string }>;
 
   // Testimonials CRUD
   addTestimonial: (testimonial: Omit<Testimonial, "id">) => void;
@@ -343,10 +345,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const storedServices = localStorage.getItem("mc_services");
-        const storedBlogs = localStorage.getItem("mc_blogs");
-        const storedTestimonials = localStorage.getItem("mc_testimonials");
-
         // Load doctors from Sanity first
         try {
           const sanityDoctors = await getDoctors();
@@ -383,14 +381,77 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           else setDoctors(defaultDoctors);
         }
 
-        if (storedServices) setServices(JSON.parse(storedServices));
-        else localStorage.setItem("mc_services", JSON.stringify(defaultServices));
+        // Load services from Sanity
+        try {
+          const sanityServices = await getServices();
+          if (sanityServices && sanityServices.length > 0) {
+            setServices(sanityServices);
+          } else {
+            const storedServices = localStorage.getItem("mc_services");
+            if (storedServices) {
+              setServices(JSON.parse(storedServices));
+            } else {
+              setServices(defaultServices);
+              // Seed to Sanity
+              for (const srv of defaultServices) {
+                await saveService({
+                  title: srv.title,
+                  description: srv.description,
+                  details: srv.details,
+                  iconName: srv.iconName,
+                });
+              }
+              const reloadedServices = await getServices();
+              if (reloadedServices && reloadedServices.length > 0) {
+                setServices(reloadedServices);
+              }
+            }
+          }
+        } catch (srvError) {
+          console.error("Failed to load services from Sanity:", srvError);
+          const storedServices = localStorage.getItem("mc_services");
+          if (storedServices) setServices(JSON.parse(storedServices));
+          else setServices(defaultServices);
+        }
 
-        if (storedBlogs) setBlogs(JSON.parse(storedBlogs));
-        else localStorage.setItem("mc_blogs", JSON.stringify(defaultBlogs));
+        // Load blogs from Sanity
+        try {
+          const sanityBlogs = await getBlogs();
+          if (sanityBlogs && sanityBlogs.length > 0) {
+            setBlogs(sanityBlogs);
+          } else {
+            const storedBlogs = localStorage.getItem("mc_blogs");
+            if (storedBlogs) {
+              setBlogs(JSON.parse(storedBlogs));
+            } else {
+              setBlogs(defaultBlogs);
+              // Seed to Sanity
+              for (const blg of defaultBlogs) {
+                await saveBlog({
+                  title: blg.title,
+                  summary: blg.summary,
+                  content: blg.content,
+                  date: blg.date,
+                  author: blg.author,
+                  readTime: blg.readTime,
+                });
+              }
+              const reloadedBlogs = await getBlogs();
+              if (reloadedBlogs && reloadedBlogs.length > 0) {
+                setBlogs(reloadedBlogs);
+              }
+            }
+          }
+        } catch (blogError) {
+          console.error("Failed to load blogs from Sanity:", blogError);
+          const storedBlogs = localStorage.getItem("mc_blogs");
+          if (storedBlogs) setBlogs(JSON.parse(storedBlogs));
+          else setBlogs(defaultBlogs);
+        }
 
+        const storedTestimonials = localStorage.getItem("mc_testimonials");
         if (storedTestimonials) setTestimonials(JSON.parse(storedTestimonials));
-        else localStorage.setItem("mc_testimonials", JSON.stringify(defaultTestimonials));
+        else setTestimonials(defaultTestimonials);
 
         // Load popup settings from Sanity first
         try {
@@ -532,59 +593,125 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Services CRUD
-  const addService = (srv: Omit<ServiceItem, "id">) => {
-    setServices((prev) => {
-      const newSrv = { ...srv, id: `srv-${Date.now()}` };
-      const updated = [...prev, newSrv];
-      syncToStorage("mc_services", updated);
-      return updated;
+  const addService = async (srv: Omit<ServiceItem, "id">) => {
+    const res = await saveService({
+      title: srv.title,
+      description: srv.description,
+      details: srv.details,
+      iconName: srv.iconName,
     });
+    if (res.success && res.data) {
+      setServices((prev) => {
+        const updated = [...prev, res.data as ServiceItem];
+        syncToStorage("mc_services", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as ServiceItem };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const updateService = (id: string, updatedFields: Partial<ServiceItem>) => {
-    setServices((prev) => {
-      const updated = prev.map((srv) =>
-        srv.id === id ? { ...srv, ...updatedFields } : srv
-      );
-      syncToStorage("mc_services", updated);
-      return updated;
+  const updateService = async (id: string, updatedFields: Partial<ServiceItem>) => {
+    const existingSrv = services.find((s) => s.id === id);
+    
+    const res = await saveService({
+      id,
+      title: updatedFields.title ?? existingSrv?.title ?? "",
+      description: updatedFields.description ?? existingSrv?.description ?? "",
+      details: updatedFields.details ?? existingSrv?.details ?? [],
+      iconName: updatedFields.iconName ?? existingSrv?.iconName ?? "Activity",
     });
+
+    if (res.success && res.data) {
+      setServices((prev) => {
+        const updated = prev.map((srv) =>
+          srv.id === id ? (res.data as ServiceItem) : srv
+        );
+        syncToStorage("mc_services", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as ServiceItem };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const deleteService = (id: string) => {
-    setServices((prev) => {
-      const updated = prev.filter((srv) => srv.id !== id);
-      syncToStorage("mc_services", updated);
-      return updated;
-    });
+  const deleteService = async (id: string) => {
+    const res = await deleteServiceAction(id);
+    if (res.success) {
+      setServices((prev) => {
+        const updated = prev.filter((srv) => srv.id !== id);
+        syncToStorage("mc_services", updated);
+        return updated;
+      });
+      return { success: true };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
   // Blogs CRUD
-  const addBlog = (blg: Omit<BlogItem, "id">) => {
-    setBlogs((prev) => {
-      const newBlg = { ...blg, id: `blog-${Date.now()}` };
-      const updated = [...prev, newBlg];
-      syncToStorage("mc_blogs", updated);
-      return updated;
+  const addBlog = async (blg: Omit<BlogItem, "id">) => {
+    const res = await saveBlog({
+      title: blg.title,
+      summary: blg.summary,
+      content: blg.content,
+      date: blg.date,
+      author: blg.author,
+      readTime: blg.readTime,
     });
+    if (res.success && res.data) {
+      setBlogs((prev) => {
+        const updated = [...prev, res.data as BlogItem];
+        syncToStorage("mc_blogs", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as BlogItem };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const updateBlog = (id: string, updatedFields: Partial<BlogItem>) => {
-    setBlogs((prev) => {
-      const updated = prev.map((blg) =>
-        blg.id === id ? { ...blg, ...updatedFields } : blg
-      );
-      syncToStorage("mc_blogs", updated);
-      return updated;
+  const updateBlog = async (id: string, updatedFields: Partial<BlogItem>) => {
+    const existingBlg = blogs.find((b) => b.id === id);
+    
+    const res = await saveBlog({
+      id,
+      title: updatedFields.title ?? existingBlg?.title ?? "",
+      summary: updatedFields.summary ?? existingBlg?.summary ?? "",
+      content: updatedFields.content ?? existingBlg?.content ?? "",
+      date: updatedFields.date ?? existingBlg?.date ?? "",
+      author: updatedFields.author ?? existingBlg?.author ?? "",
+      readTime: updatedFields.readTime ?? existingBlg?.readTime ?? "",
     });
+
+    if (res.success && res.data) {
+      setBlogs((prev) => {
+        const updated = prev.map((blg) =>
+          blg.id === id ? (res.data as BlogItem) : blg
+        );
+        syncToStorage("mc_blogs", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as BlogItem };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const deleteBlog = (id: string) => {
-    setBlogs((prev) => {
-      const updated = prev.filter((blg) => blg.id !== id);
-      syncToStorage("mc_blogs", updated);
-      return updated;
-    });
+  const deleteBlog = async (id: string) => {
+    const res = await deleteBlogAction(id);
+    if (res.success) {
+      setBlogs((prev) => {
+        const updated = prev.filter((blg) => blg.id !== id);
+        syncToStorage("mc_blogs", updated);
+        return updated;
+      });
+      return { success: true };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
   // Testimonials CRUD

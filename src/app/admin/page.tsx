@@ -113,6 +113,10 @@ function AdminPanelContent() {
   const [isSavingPopup, setIsSavingPopup] = useState(false);
   const [isSavingDoctor, setIsSavingDoctor] = useState(false);
   const [deletingDoctorId, setDeletingDoctorId] = useState<string | null>(null);
+  const [isSavingService, setIsSavingService] = useState(false);
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+  const [isSavingBlog, setIsSavingBlog] = useState(false);
+  const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
 
   // Sync form states when settings load from Sanity
   useEffect(() => {
@@ -272,28 +276,41 @@ function AdminPanelContent() {
   };
 
   // Service Action
-  const handleSaveService = (e: React.FormEvent) => {
+  const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
-    const detailsArr = srvDetailsInput
-      .split(",")
-      .map((d) => d.trim())
-      .filter((d) => d.length > 0);
+    setIsSavingService(true);
+    try {
+      const detailsArr = srvDetailsInput
+        .split(",")
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0);
 
-    const srvData = {
-      ...srvForm,
-      details: detailsArr
-    };
+      const srvData = {
+        ...srvForm,
+        details: detailsArr
+      };
 
-    if (editingId) {
-      updateService(editingId, srvData);
-      setEditingId(null);
-    } else {
-      addService(srvData);
-      setIsAdding(false);
+      let res;
+      if (editingId) {
+        res = await updateService(editingId, srvData);
+      } else {
+        res = await addService(srvData);
+      }
+
+      if (res.success) {
+        alert(editingId ? "Xidmət məlumatları uğurla yeniləndi!" : "Yeni xidmət uğurla əlavə edildi!");
+        setEditingId(null);
+        setIsAdding(false);
+        setSrvForm({ title: "", description: "", details: [], iconName: "Activity" });
+        setSrvDetailsInput("");
+      } else {
+        alert("Xəta baş verdi: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Xəta baş verdi: " + (err.message || String(err)));
+    } finally {
+      setIsSavingService(false);
     }
-
-    setSrvForm({ title: "", description: "", details: [], iconName: "Activity" });
-    setSrvDetailsInput("");
   };
 
   const handleEditServiceClick = (srv: ServiceItem) => {
@@ -309,34 +326,46 @@ function AdminPanelContent() {
   };
 
   // Blog Action
-  const handleSaveBlog = (e: React.FormEvent) => {
+  const handleSaveBlog = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Automatically calculate reading time (omitted from panel input form)
-    const words = blogForm.content.trim().split(/\s+/).length;
-    const computedReadTime = Math.max(1, Math.ceil(words / 150)) + " dəq";
+    setIsSavingBlog(true);
+    try {
+      // Automatically calculate reading time (omitted from panel input form)
+      const words = blogForm.content.trim().split(/\s+/).length;
+      const computedReadTime = Math.max(1, Math.ceil(words / 150)) + " dəq";
 
-    const blogData = {
-      ...blogForm,
-      readTime: computedReadTime
-    };
+      const blogData = {
+        ...blogForm,
+        readTime: computedReadTime
+      };
 
-    if (editingId) {
-      updateBlog(editingId, blogData);
-      setEditingId(null);
-    } else {
-      addBlog(blogData);
-      setIsAdding(false);
+      let res;
+      if (editingId) {
+        res = await updateBlog(editingId, blogData);
+      } else {
+        res = await addBlog(blogData);
+      }
+
+      if (res.success) {
+        alert(editingId ? "Məqalə uğurla yeniləndi!" : "Yeni məqalə uğurla əlavə edildi!");
+        setEditingId(null);
+        setIsAdding(false);
+        setBlogForm({
+          title: "",
+          summary: "",
+          content: "",
+          date: new Date().toISOString().split("T")[0],
+          author: "",
+          readTime: ""
+        });
+      } else {
+        alert("Xəta baş verdi: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Xəta baş verdi: " + (err.message || String(err)));
+    } finally {
+      setIsSavingBlog(false);
     }
-
-    setBlogForm({
-      title: "",
-      summary: "",
-      content: "",
-      date: new Date().toISOString().split("T")[0],
-      author: "",
-      readTime: ""
-    });
   };
 
   const handleEditBlogClick = (blog: BlogItem) => {
@@ -1345,17 +1374,23 @@ function AdminPanelContent() {
                     <div className="flex justify-end gap-3 pt-2">
                       <button
                         type="button"
+                        disabled={isSavingService}
                         onClick={handleCancel}
-                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50"
+                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Ləğv Et
                       </button>
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
+                        disabled={isSavingService}
+                        className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
                       >
-                        <Save className="h-3.5 w-3.5" />
-                        Yadda Saxla
+                        {isSavingService ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                        {isSavingService ? "Yadda saxlanılır..." : "Yadda Saxla"}
                       </button>
                     </div>
                   </form>
@@ -1400,15 +1435,30 @@ function AdminPanelContent() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => {
-                                  if (confirm(`${srv.title} xidmətini silmək istədiyinizdən əminsiniz?`)) {
-                                    deleteService(srv.id);
+                                disabled={deletingServiceId !== null}
+                                onClick={async () => {
+                                  if (confirm(`${srv.title} xidmətini silmək istəinizdən əminsiniz?`)) {
+                                    setDeletingServiceId(srv.id);
+                                    try {
+                                      const res = await deleteService(srv.id);
+                                      if (!res.success) {
+                                        alert("Xəta baş verdi: " + res.error);
+                                      }
+                                    } catch (err: any) {
+                                      alert("Xəta baş verdi: " + (err.message || String(err)));
+                                    } finally {
+                                      setDeletingServiceId(null);
+                                    }
                                   }
                                 }}
-                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all"
+                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Sil"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {deletingServiceId === srv.id ? (
+                                  <div className="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </button>
                             </div>
                           </td>
@@ -1525,17 +1575,23 @@ function AdminPanelContent() {
                     <div className="flex justify-end gap-3 pt-2">
                       <button
                         type="button"
+                        disabled={isSavingBlog}
                         onClick={handleCancel}
-                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50"
+                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Ləğv Et
                       </button>
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
+                        disabled={isSavingBlog}
+                        className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
                       >
-                        <Save className="h-3.5 w-3.5" />
-                        Yadda Saxla
+                        {isSavingBlog ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                        {isSavingBlog ? "Yadda saxlanılır..." : "Yadda Saxla"}
                       </button>
                     </div>
                   </form>
@@ -1572,15 +1628,30 @@ function AdminPanelContent() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => {
+                                disabled={deletingBlogId !== null}
+                                onClick={async () => {
                                   if (confirm(`${blog.title} məqaləsini silmək istədiyinizdən əminsiniz?`)) {
-                                    deleteBlog(blog.id);
+                                    setDeletingBlogId(blog.id);
+                                    try {
+                                      const res = await deleteBlog(blog.id);
+                                      if (!res.success) {
+                                        alert("Xəta baş verdi: " + res.error);
+                                      }
+                                    } catch (err: any) {
+                                      alert("Xəta baş verdi: " + (err.message || String(err)));
+                                    } finally {
+                                      setDeletingBlogId(null);
+                                    }
                                   }
                                 }}
-                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all"
+                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Sil"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {deletingBlogId === blog.id ? (
+                                  <div className="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </button>
                             </div>
                           </td>
