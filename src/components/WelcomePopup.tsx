@@ -11,10 +11,7 @@ export default function WelcomePopup() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    // Check if the welcome screen has already been shown in this session
-    const hasBeenShown = sessionStorage.getItem("mc_welcome_shown");
-    
-    if (!hasBeenShown && popupSettings.active) {
+    if (popupSettings.active) {
       // Expiration check
       const currentDate = new Date();
       const expirationDate = new Date(popupSettings.expirationDate);
@@ -34,7 +31,6 @@ export default function WelcomePopup() {
 
   const handleClose = () => {
     setIsOpen(false);
-    sessionStorage.setItem("mc_welcome_shown", "true");
   };
 
   if (!isOpen) return null;
