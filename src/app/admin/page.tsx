@@ -107,6 +107,8 @@ export default function AdminPanel() {
   const [popupActive, setPopupActive] = useState(false);
   const [heroBgInput, setHeroBgInput] = useState(heroBgImage);
   const [isSavingPopup, setIsSavingPopup] = useState(false);
+  const [isSavingDoctor, setIsSavingDoctor] = useState(false);
+  const [deletingDoctorId, setDeletingDoctorId] = useState<string | null>(null);
 
   // Sync form states only when settings data is fully present
   useEffect(() => {
@@ -199,22 +201,35 @@ export default function AdminPanel() {
   };
 
   // Doctor Action
-  const handleSaveDoctor = (e: React.FormEvent) => {
+  const handleSaveDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    const docData = {
-      ...docForm,
-      image: docForm.image || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop"
-    };
+    setIsSavingDoctor(true);
+    try {
+      const docData = {
+        ...docForm,
+        image: docForm.image || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop"
+      };
 
-    if (editingId) {
-      updateDoctor(editingId, docData);
-      setEditingId(null);
-    } else {
-      addDoctor(docData);
-      setIsAdding(false);
+      let res;
+      if (editingId) {
+        res = await updateDoctor(editingId, docData);
+      } else {
+        res = await addDoctor(docData);
+      }
+
+      if (res.success) {
+        alert(editingId ? "Həkim məlumatları uğurla yeniləndi!" : "Yeni həkim uğurla əlavə edildi!");
+        setEditingId(null);
+        setIsAdding(false);
+        setDocForm({ name: "", specialty: "", image: "", experience: "", education: "" });
+      } else {
+        alert("Xəta baş verdi: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Xəta baş verdi: " + (err.message || String(err)));
+    } finally {
+      setIsSavingDoctor(false);
     }
-    
-    setDocForm({ name: "", specialty: "", image: "", experience: "", education: "" });
   };
 
   const handleEditDoctorClick = (doc: Doctor) => {
@@ -1094,17 +1109,23 @@ export default function AdminPanel() {
                     <div className="flex justify-end gap-3 pt-2">
                       <button
                         type="button"
+                        disabled={isSavingDoctor}
                         onClick={handleCancel}
-                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50"
+                        className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 text-xs font-bold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Ləğv Et
                       </button>
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
+                        disabled={isSavingDoctor}
+                        className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-colors"
                       >
-                        <Save className="h-3.5 w-3.5" />
-                        Yadda Saxla
+                        {isSavingDoctor ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                        {isSavingDoctor ? "Yadda saxlanılır..." : "Yadda Saxla"}
                       </button>
                     </div>
                   </form>
@@ -1156,15 +1177,30 @@ export default function AdminPanel() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => {
+                                disabled={deletingDoctorId !== null}
+                                onClick={async () => {
                                   if (confirm(`${doc.name} məlumatlarını silmək istədiyinizdən əminsiniz?`)) {
-                                    deleteDoctor(doc.id);
+                                    setDeletingDoctorId(doc.id);
+                                    try {
+                                      const res = await deleteDoctor(doc.id);
+                                      if (!res.success) {
+                                        alert("Xəta baş verdi: " + res.error);
+                                      }
+                                    } catch (err: any) {
+                                      alert("Xəta baş verdi: " + (err.message || String(err)));
+                                    } finally {
+                                      setDeletingDoctorId(null);
+                                    }
                                   }
                                 }}
-                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all"
+                                className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Sil"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {deletingDoctorId === doc.id ? (
+                                  <div className="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </button>
                             </div>
                           </td>

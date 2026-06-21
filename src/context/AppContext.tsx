@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getPopupSettings } from "@/app/actions/popup";
+import { getDoctors, saveDoctor, deleteDoctorAction } from "@/app/actions/doctors";
 
 export interface Doctor {
   id: string;
@@ -10,6 +11,7 @@ export interface Doctor {
   image: string;
   experience?: string;
   education?: string;
+  imageRef?: string;
 }
 
 export interface ServiceItem {
@@ -94,9 +96,9 @@ interface AppContextType {
   deleteAppointment: (id: string) => void;
 
   // Doctors CRUD
-  addDoctor: (doctor: Omit<Doctor, "id">) => void;
-  updateDoctor: (id: string, doctor: Partial<Doctor>) => void;
-  deleteDoctor: (id: string) => void;
+  addDoctor: (doctor: Omit<Doctor, "id">) => Promise<{ success: boolean; data?: Doctor; error?: string }>;
+  updateDoctor: (id: string, doctor: Partial<Doctor>) => Promise<{ success: boolean; data?: Doctor; error?: string }>;
+  deleteDoctor: (id: string) => Promise<{ success: boolean; error?: string }>;
   
   // Services CRUD
   addService: (service: Omit<ServiceItem, "id">) => void;
@@ -340,31 +342,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const storedDoctors = localStorage.getItem("mc_doctors");
         const storedServices = localStorage.getItem("mc_services");
         const storedBlogs = localStorage.getItem("mc_blogs");
         const storedTestimonials = localStorage.getItem("mc_testimonials");
 
-        if (storedDoctors) {
-          let parsed = JSON.parse(storedDoctors) as Doctor[];
-          let migrated = false;
-          parsed = parsed.map((doc) => {
-            if (doc.id === "doc-1" && doc.image.includes("unsplash.com")) {
-              migrated = true;
-              return { ...doc, image: "/images/doctor_male_elcin.png" };
+        // Load doctors from Sanity first
+        try {
+          const sanityDoctors = await getDoctors();
+          if (sanityDoctors && sanityDoctors.length > 0) {
+            setDoctors(sanityDoctors);
+          } else {
+            // If Sanity is empty, try local storage fallback
+            const storedDoctors = localStorage.getItem("mc_doctors");
+            if (storedDoctors) {
+              setDoctors(JSON.parse(storedDoctors));
+            } else {
+              setDoctors(defaultDoctors);
+              // Save defaults to Sanity so database has initial data
+              for (const doc of defaultDoctors) {
+                await saveDoctor({
+                  name: doc.name,
+                  specialty: doc.specialty,
+                  image: doc.image,
+                  experience: doc.experience,
+                  education: doc.education
+                });
+              }
+              // Fetch again to get Sanity IDs
+              const reloadedDoctors = await getDoctors();
+              if (reloadedDoctors && reloadedDoctors.length > 0) {
+                setDoctors(reloadedDoctors);
+              }
             }
-            if (doc.id === "doc-2" && doc.image.includes("unsplash.com")) {
-              migrated = true;
-              return { ...doc, image: "/images/doctor_female_aynur.png" };
-            }
-            return doc;
-          });
-          setDoctors(parsed);
-          if (migrated) {
-            localStorage.setItem("mc_doctors", JSON.stringify(parsed));
           }
-        } else {
-          localStorage.setItem("mc_doctors", JSON.stringify(defaultDoctors));
+        } catch (docError) {
+          console.error("Failed to load doctors from Sanity:", docError);
+          const storedDoctors = localStorage.getItem("mc_doctors");
+          if (storedDoctors) setDoctors(JSON.parse(storedDoctors));
+          else setDoctors(defaultDoctors);
         }
 
         if (storedServices) setServices(JSON.parse(storedServices));
@@ -437,31 +452,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Doctors CRUD
-  const addDoctor = (doc: Omit<Doctor, "id">) => {
-    setDoctors((prev) => {
-      const newDoc = { ...doc, id: `doc-${Date.now()}` };
-      const updated = [...prev, newDoc];
-      syncToStorage("mc_doctors", updated);
-      return updated;
+  const addDoctor = async (doc: Omit<Doctor, "id">) => {
+    const res = await saveDoctor({
+      name: doc.name,
+      specialty: doc.specialty,
+      image: doc.image,
+      experience: doc.experience,
+      education: doc.education,
     });
+    if (res.success && res.data) {
+      setDoctors((prev) => {
+        const updated = [...prev, res.data as Doctor];
+        syncToStorage("mc_doctors", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as Doctor };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const updateDoctor = (id: string, updatedFields: Partial<Doctor>) => {
-    setDoctors((prev) => {
-      const updated = prev.map((doc) =>
-        doc.id === id ? { ...doc, ...updatedFields } : doc
-      );
-      syncToStorage("mc_doctors", updated);
-      return updated;
+  const updateDoctor = async (id: string, updatedFields: Partial<Doctor>) => {
+    const existingDoc = doctors.find((d) => d.id === id);
+    
+    const res = await saveDoctor({
+      id,
+      name: updatedFields.name ?? existingDoc?.name ?? "",
+      specialty: updatedFields.specialty ?? existingDoc?.specialty ?? "",
+      image: updatedFields.image ?? existingDoc?.image ?? "",
+      experience: updatedFields.experience ?? existingDoc?.experience,
+      education: updatedFields.education ?? existingDoc?.education,
+      imageRef: updatedFields.imageRef ?? existingDoc?.imageRef,
     });
+
+    if (res.success && res.data) {
+      setDoctors((prev) => {
+        const updated = prev.map((doc) =>
+          doc.id === id ? (res.data as Doctor) : doc
+        );
+        syncToStorage("mc_doctors", updated);
+        return updated;
+      });
+      return { success: true, data: res.data as Doctor };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
-  const deleteDoctor = (id: string) => {
-    setDoctors((prev) => {
-      const updated = prev.filter((doc) => doc.id !== id);
-      syncToStorage("mc_doctors", updated);
-      return updated;
-    });
+  const deleteDoctor = async (id: string) => {
+    const res = await deleteDoctorAction(id);
+    if (res.success) {
+      setDoctors((prev) => {
+        const updated = prev.filter((doc) => doc.id !== id);
+        syncToStorage("mc_doctors", updated);
+        return updated;
+      });
+      return { success: true };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
   // Services CRUD
