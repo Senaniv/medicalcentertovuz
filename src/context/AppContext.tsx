@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getPopupSettings } from "@/app/actions/popup";
 import { getDoctors, saveDoctor, deleteDoctorAction } from "@/app/actions/doctors";
+import { getTelegramSettings, saveTelegramSettings } from "@/app/actions/telegram";
 
 export interface Doctor {
   id: string;
@@ -80,7 +81,7 @@ interface AppContextType {
   // Pop-up Settings
   updatePopupSettings: (settings: Partial<PopupSettings>) => void;
   updateHeroBgImage: (url: string) => void;
-  updateTelegramSettings: (settings: Partial<TelegramSettings>) => void;
+  updateTelegramSettings: (settings: Partial<TelegramSettings>) => Promise<{ success: boolean; data?: TelegramSettings; error?: string }>;
   sendTelegramNotification: (
     appId: string,
     name: string,
@@ -421,9 +422,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (storedHeroBg) setHeroBgImage(storedHeroBg);
         else localStorage.setItem("mc_hero_bg", "/images/hero-bg.png");
 
-        const storedTelegram = localStorage.getItem("mc_telegram");
-        if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
-        else localStorage.setItem("mc_telegram", JSON.stringify(defaultTelegram));
+        // Load telegram settings from Sanity
+        try {
+          const sanityTelegram = await getTelegramSettings();
+          if (sanityTelegram) {
+            setTelegramSettings({
+              botToken: sanityTelegram.botToken ?? defaultTelegram.botToken,
+              chatId: sanityTelegram.chatId ?? defaultTelegram.chatId,
+              active: sanityTelegram.active ?? defaultTelegram.active,
+            });
+          } else {
+            const storedTelegram = localStorage.getItem("mc_telegram");
+            if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
+            else setTelegramSettings(defaultTelegram);
+          }
+        } catch (sanityTelegramErr) {
+          console.error("Failed to load telegram settings from Sanity:", sanityTelegramErr);
+          const storedTelegram = localStorage.getItem("mc_telegram");
+          if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
+          else setTelegramSettings(defaultTelegram);
+        }
       } catch (e) {
         console.error("Error accessing localStorage:", e);
       }
@@ -634,12 +652,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncToStorage("mc_hero_bg", url);
   };
 
-  const updateTelegramSettings = (settings: Partial<TelegramSettings>) => {
-    setTelegramSettings((prev) => {
-      const updated = { ...prev, ...settings };
-      syncToStorage("mc_telegram", updated);
-      return updated;
-    });
+  const updateTelegramSettings = async (settings: Partial<TelegramSettings>) => {
+    const updatedFields = {
+      botToken: settings.botToken ?? telegramSettings.botToken,
+      chatId: settings.chatId ?? telegramSettings.chatId,
+      active: settings.active ?? telegramSettings.active,
+    };
+
+    const res = await saveTelegramSettings(updatedFields);
+    if (res.success && res.data) {
+      setTelegramSettings(res.data);
+      syncToStorage("mc_telegram", res.data);
+      return { success: true, data: res.data };
+    } else {
+      return { success: false, error: res.error };
+    }
   };
 
   const sendTelegramNotification = async (

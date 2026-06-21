@@ -110,19 +110,27 @@ export default function AdminPanel() {
   const [isSavingDoctor, setIsSavingDoctor] = useState(false);
   const [deletingDoctorId, setDeletingDoctorId] = useState<string | null>(null);
 
-  // Sync form states only when settings data is fully present
+  // Sync form states when settings load from Sanity
   useEffect(() => {
-    if (isLoaded && popupSettings && popupSettings.imageUrl) {
-      setPopupImageUrl(popupSettings.imageUrl);
-      setPopupExpDate(popupSettings.expirationDate);
-      setPopupActive(popupSettings.active);
+    if (isLoaded) {
+      if (popupSettings && popupSettings.imageUrl) {
+        setPopupImageUrl(popupSettings.imageUrl);
+        setPopupExpDate(popupSettings.expirationDate);
+        setPopupActive(popupSettings.active);
+      }
+      if (telegramSettings) {
+        setBotTokenInput(telegramSettings.botToken);
+        setChatIdInput(telegramSettings.chatId);
+        setTelegramActive(telegramSettings.active);
+      }
     }
-  }, [isLoaded, popupSettings]);
+  }, [isLoaded, popupSettings, telegramSettings]);
 
-  // Telegram Settings state
-  const [botTokenInput, setBotTokenInput] = useState(telegramSettings.botToken);
-  const [chatIdInput, setChatIdInput] = useState(telegramSettings.chatId);
-  const [telegramActive, setTelegramActive] = useState(telegramSettings.active);
+  // Telegram Settings state (starts empty/false to avoid flashing default settings)
+  const [botTokenInput, setBotTokenInput] = useState("");
+  const [chatIdInput, setChatIdInput] = useState("");
+  const [telegramActive, setTelegramActive] = useState(false);
+  const [isSavingTelegram, setIsSavingTelegram] = useState(false);
 
   // Appointments Search & Filter States
   const [appSearch, setAppSearch] = useState("");
@@ -190,14 +198,25 @@ export default function AdminPanel() {
   };
 
   // Telegram Submit
-  const handleTelegramSave = (e: React.FormEvent) => {
+  const handleTelegramSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateTelegramSettings({
-      botToken: botTokenInput,
-      chatId: chatIdInput,
-      active: telegramActive
-    });
-    alert("Telegram bildiriş parametrləri uğurla yeniləndi!");
+    setIsSavingTelegram(true);
+    try {
+      const res = await updateTelegramSettings({
+        botToken: botTokenInput,
+        chatId: chatIdInput,
+        active: telegramActive
+      });
+      if (res.success) {
+        alert("Telegram bildiriş parametrləri uğurla yeniləndi!");
+      } else {
+        alert("Xəta baş verdi: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Xəta baş verdi: " + (err.message || String(err)));
+    } finally {
+      setIsSavingTelegram(false);
+    }
   };
 
   // Doctor Action
@@ -991,10 +1010,15 @@ export default function AdminPanel() {
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="inline-flex items-center gap-2 bg-[#2B4C9B] hover:bg-[#1f3770] text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-colors cursor-pointer"
+                      disabled={isSavingTelegram}
+                      className="inline-flex items-center gap-2 bg-[#2B4C9B] hover:bg-[#1f3770] disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-colors cursor-pointer"
                     >
-                      <Save className="h-4 w-4" />
-                      Nizamlamaları Yadda Saxla
+                      {isSavingTelegram ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {isSavingTelegram ? "Yadda saxlanılır..." : "Nizamlamaları Yadda Saxla"}
                     </button>
                   </div>
                 </form>
