@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 interface LogoProps {
   className?: string;
@@ -16,7 +17,10 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
   const currentSize = dimensions[size];
 
   return (
-    <div className={`flex items-center gap-3 select-none ${className}`}>
+    <Link
+      href="/"
+      className={`flex items-center gap-3 select-none hover:opacity-90 active:scale-95 transition-all duration-200 ${className}`}
+    >
       {/* SVG Emblem */}
       <svg
         className={`${currentSize.svg} flex-shrink-0`}
@@ -51,7 +55,7 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
 
       {/* Brand Text */}
       {showText && (
-        <div className="flex flex-col leading-none font-sans font-extrabold tracking-tight">
+        <div className="flex flex-col leading-none font-sans font-extrabold tracking-tight text-left">
           <div className="flex flex-col">
             <span className="text-[#2B4C9B] uppercase font-black tracking-wide">
               Medical
@@ -65,6 +69,6 @@ export default function Logo({ className = "", showText = true, size = "md" }: L
           </span>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
