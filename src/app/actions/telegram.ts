@@ -16,7 +16,9 @@ export async function getTelegramSettings() {
         botToken,
         chatId,
         active
-      }`
+      }`,
+      {},
+      { cache: "no-store", next: { revalidate: 0 } }
     );
     return data;
   } catch (error) {
@@ -81,7 +83,9 @@ export async function sendAppointmentNotification(params: AppointmentNotificatio
   try {
     // Always read fresh from Sanity — never rely on client state
     const settings = await sanityClient.fetch(
-      `*[_type == "telegramSettings"][0] { botToken, chatId, active }`
+      `*[_type == "telegramSettings"][0] { botToken, chatId, active }`,
+      {},
+      { cache: "no-store", next: { revalidate: 0 } }
     );
 
     if (!settings?.active || !settings?.botToken || !settings?.chatId) {

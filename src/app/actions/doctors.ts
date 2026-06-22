@@ -24,7 +24,9 @@ export async function getDoctors() {
         education,
         "image": image.asset->url,
         "imageRef": image.asset->_ref
-      }`
+      }`,
+      {},
+      { cache: "no-store", next: { revalidate: 0 } }
     );
     return data;
   } catch (error) {
@@ -157,7 +159,8 @@ export async function saveDoctor(doctor: DoctorInput) {
     if (finalImageRef) {
       const assetData = await sanityClient.fetch(
         `*[_id == $ref][0].url`,
-        { ref: finalImageRef }
+        { ref: finalImageRef },
+        { cache: "no-store", next: { revalidate: 0 } }
       );
       if (assetData) {
         finalImageUrl = assetData;

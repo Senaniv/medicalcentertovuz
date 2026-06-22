@@ -20,7 +20,9 @@ export async function getServices() {
         description,
         details,
         iconName
-      }`
+      }`,
+      {},
+      { cache: "no-store", next: { revalidate: 0 } }
     );
     return data;
   } catch (error) {

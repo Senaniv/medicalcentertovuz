@@ -24,7 +24,9 @@ export async function getBlogs() {
         date,
         author,
         readTime
-      }`
+      }`,
+      {},
+      { cache: "no-store", next: { revalidate: 0 } }
     );
     return data;
   } catch (error) {

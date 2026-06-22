@@ -22,7 +22,7 @@ export default function Hero() {
   const [lastCode, setLastCode] = useState("");
   const [lastSubmitType, setLastSubmitType] = useState<"whatsapp" | "call">("whatsapp");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.date) {
       alert("Zəhmət olmasa Ad, Telefon və Tarix sahələrini doldurun.");
@@ -47,35 +47,38 @@ export default function Hero() {
     // (reads settings directly from Sanity — works on mobile even before client state loads)
     const serviceName = services.find((s) => s.id === formData.serviceId)?.title || "Şöbə seçilməyib";
     const origin = typeof window !== "undefined" ? window.location.origin : "https://medicalcentertovuz.vercel.app";
-    sendAppointmentNotification({
-      appId: randCode,
-      name: formData.name,
-      phone: formData.phone,
-      date: formData.date,
-      submitType: formData.submitType,
-      serviceName,
-      origin,
-    });
+    
+    try {
+      await sendAppointmentNotification({
+        appId: randCode,
+        name: formData.name,
+        phone: formData.phone,
+        date: formData.date,
+        submitType: formData.submitType,
+        serviceName,
+        origin,
+      });
+    } catch (err) {
+      console.error("Telegram notification error:", err);
+    }
 
     setLastCode(randCode);
     setLastSubmitType(formData.submitType);
+    setIsSubmitting(false);
+    setIsSuccess(true);
+    
+    // Trigger confetti celebration
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ["#2B4C9B", "#E3232A", "#F8FAFC", "#10B981"]
+    });
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      
-      // Trigger confetti celebration
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ["#2B4C9B", "#E3232A", "#F8FAFC", "#10B981"]
-      });
-
-      // WhatsApp redirect if chosen
-      if (formData.submitType === "whatsapp") {
-        const serviceName = services.find(s => s.id === formData.serviceId)?.title || "Seçilməyib";
-        const message = `🏥 *Yeni Randevu Müraciəti (Kod: ${randCode})*
+    // WhatsApp redirect if chosen
+    if (formData.submitType === "whatsapp") {
+      const serviceName = services.find(s => s.id === formData.serviceId)?.title || "Seçilməyib";
+      const message = `🏥 *Yeni Randevu Müraciəti (Kod: ${randCode})*
 
 👤 Ad Soyad: ${formData.name}
 📞 Telefon: ${formData.phone}
@@ -83,19 +86,18 @@ export default function Hero() {
 📅 Tarix: ${formData.date}
 📝 Qeyd: ${formData.notes || "Yoxdur"}`;
 
-        window.open(`https://wa.me/994513150500?text=${encodeURIComponent(message)}`, "_blank");
-      }
+      window.open(`https://wa.me/994513150500?text=${encodeURIComponent(message)}`, "_blank");
+    }
 
-      // Reset form
-      setFormData({
-        name: "",
-        phone: "",
-        serviceId: "",
-        date: "",
-        notes: "",
-        submitType: "whatsapp",
-      });
-    }, 1200);
+    // Reset form
+    setFormData({
+      name: "",
+      phone: "",
+      serviceId: "",
+      date: "",
+      notes: "",
+      submitType: "whatsapp",
+    });
   };
 
   const handleInputChange = (
