@@ -5,9 +5,10 @@ import { useApp } from "@/context/AppContext";
 import { Calendar, User, Phone, CheckCircle2, ChevronRight, Clock } from "lucide-react";
 import confetti from "canvas-confetti";
 import DatePicker from "./DatePicker";
+import { sendAppointmentNotification } from "@/app/actions/telegram";
 
 export default function Hero() {
-  const { services, addAppointment, heroBgImage, sendTelegramNotification } = useApp();
+  const { services, addAppointment, heroBgImage } = useApp();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -42,15 +43,19 @@ export default function Hero() {
       submitType: formData.submitType,
     });
 
-    // Send Telegram Notification to Admin
-    sendTelegramNotification(
-      randCode,
-      formData.name,
-      formData.phone,
-      formData.date,
-      formData.submitType,
-      formData.serviceId
-    );
+    // Send Telegram Notification to Admin via Server Action
+    // (reads settings directly from Sanity — works on mobile even before client state loads)
+    const serviceName = services.find((s) => s.id === formData.serviceId)?.title || "Şöbə seçilməyib";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://medicalcentertovuz.vercel.app";
+    sendAppointmentNotification({
+      appId: randCode,
+      name: formData.name,
+      phone: formData.phone,
+      date: formData.date,
+      submitType: formData.submitType,
+      serviceName,
+      origin,
+    });
 
     setLastCode(randCode);
     setLastSubmitType(formData.submitType);
