@@ -6,6 +6,7 @@ import { getDoctors, saveDoctor, deleteDoctorAction } from "@/app/actions/doctor
 import { getTelegramSettings, saveTelegramSettings } from "@/app/actions/telegram";
 import { getServices, saveService, deleteServiceAction } from "@/app/actions/services";
 import { getBlogs, saveBlog, deleteBlogAction } from "@/app/actions/blogs";
+import { getAppointments, saveAppointment, deleteAppointmentAction } from "@/app/actions/appointments";
 
 export interface Doctor {
   id: string;
@@ -475,9 +476,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           else setPopupSettings(defaultPopup);
         }
 
-        const storedAppointments = localStorage.getItem("mc_appointments");
-        if (storedAppointments) setAppointments(JSON.parse(storedAppointments));
-        else localStorage.setItem("mc_appointments", JSON.stringify(defaultAppointments));
+        // Load appointments from Sanity
+        try {
+          const sanityApps = await getAppointments();
+          if (sanityApps && sanityApps.length > 0) {
+            setAppointments(sanityApps as Appointment[]);
+          } else {
+            const storedAppointments = localStorage.getItem("mc_appointments");
+            if (storedAppointments) {
+              const parsed = JSON.parse(storedAppointments);
+              setAppointments(parsed);
+              // Seed existing local storage appointments to Sanity
+              for (const app of parsed) {
+                await saveAppointment(app);
+              }
+            } else {
+              setAppointments(defaultAppointments);
+            }
+          }
+        } catch (sanityAppError) {
+          console.error("Failed to load appointments from Sanity:", sanityAppError);
+          const storedAppointments = localStorage.getItem("mc_appointments");
+          if (storedAppointments) setAppointments(JSON.parse(storedAppointments));
+          else setAppointments(defaultAppointments);
+        }
 
         const storedHeroBg = localStorage.getItem("mc_hero_bg");
         if (storedHeroBg) setHeroBgImage(storedHeroBg);
@@ -743,30 +765,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Appointments CRUD
-  const addAppointment = (app: Omit<Appointment, "status" | "createdAt">) => {
+  const addAppointment = async (app: Omit<Appointment, "status" | "createdAt">) => {
+    const newApp: Appointment = {
+      ...app,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await saveAppointment(newApp);
+    } catch (err) {
+      console.error("Failed to save appointment to Sanity:", err);
+    }
+
     setAppointments((prev) => {
-      const newApp: Appointment = {
-        ...app,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
       const updated = [newApp, ...prev]; // newer appointments first
       syncToStorage("mc_appointments", updated);
       return updated;
     });
   };
 
-  const updateAppointmentStatus = (id: string, status: Appointment["status"]) => {
+  const updateAppointmentStatus = async (id: string, status: Appointment["status"]) => {
+    let updatedApp: Appointment | undefined;
+
     setAppointments((prev) => {
-      const updated = prev.map((app) =>
-        app.id === id ? { ...app, status } : app
-      );
+      const updated = prev.map((app) => {
+        if (app.id === id) {
+          updatedApp = { ...app, status };
+          return updatedApp;
+        }
+        return app;
+      });
       syncToStorage("mc_appointments", updated);
       return updated;
     });
+
+    if (updatedApp) {
+      try {
+        await saveAppointment(updatedApp);
+      } catch (err) {
+        console.error("Failed to update appointment status in Sanity:", err);
+      }
+    }
   };
 
-  const deleteAppointment = (id: string) => {
+  const deleteAppointment = async (id: string) => {
+    try {
+      await deleteAppointmentAction(id);
+    } catch (err) {
+      console.error("Failed to delete appointment from Sanity:", err);
+    }
+
     setAppointments((prev) => {
       const updated = prev.filter((app) => app.id !== id);
       syncToStorage("mc_appointments", updated);
