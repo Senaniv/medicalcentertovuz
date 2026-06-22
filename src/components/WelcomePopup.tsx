@@ -66,11 +66,7 @@ export default function WelcomePopup() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={popupSettings.imageUrl}
-              src={
-                popupSettings.imageUrl && popupSettings.imageUrl.startsWith("http")
-                  ? `${popupSettings.imageUrl}?_=${Date.now()}`
-                  : popupSettings.imageUrl || "/images/popup-banner.png"
-              }
+              src={popupSettings.imageUrl || "/images/popup-banner.png"}
               alt="Tovuz Medical Center Welcome Screen"
               className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
               onError={(e) => {

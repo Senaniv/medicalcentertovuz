@@ -43,9 +43,10 @@ export async function GET(request: Request) {
       popupSettings,
       docCount,
     });
-  } catch (err: any) {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({
-      error: err.message || String(err),
+      error: errorMsg,
       env: {
         NEXT_PUBLIC_SANITY_PROJECT_ID: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
         NEXT_PUBLIC_SANITY_DATASET: process.env.NEXT_PUBLIC_SANITY_DATASET,

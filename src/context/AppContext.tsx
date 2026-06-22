@@ -513,7 +513,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Update localStorage helper
-  const syncToStorage = (key: string, data: any) => {
+  const syncToStorage = (key: string, data: unknown) => {
     try {
       localStorage.setItem(key, JSON.stringify(data));
     } catch (e) {
