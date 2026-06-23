@@ -351,6 +351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const sanityDoctors = await getDoctors();
           if (sanityDoctors && sanityDoctors.length > 0) {
             setDoctors(sanityDoctors);
+            localStorage.setItem("mc_doctors", JSON.stringify(sanityDoctors));
           } else {
             // If Sanity is empty, try local storage fallback
             const storedDoctors = localStorage.getItem("mc_doctors");
@@ -387,6 +388,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const sanityServices = await getServices();
           if (sanityServices && sanityServices.length > 0) {
             setServices(sanityServices);
+            localStorage.setItem("mc_services", JSON.stringify(sanityServices));
           } else {
             const storedServices = localStorage.getItem("mc_services");
             if (storedServices) {
@@ -420,6 +422,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const sanityBlogs = await getBlogs();
           if (sanityBlogs && sanityBlogs.length > 0) {
             setBlogs(sanityBlogs);
+            localStorage.setItem("mc_blogs", JSON.stringify(sanityBlogs));
           } else {
             const storedBlogs = localStorage.getItem("mc_blogs");
             if (storedBlogs) {
@@ -458,12 +461,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try {
           const sanityPopup = await getPopupSettings();
           if (sanityPopup) {
-            setPopupSettings({
+            const popupData = {
               active: sanityPopup.active ?? defaultPopup.active,
               expirationDate: sanityPopup.expirationDate ?? defaultPopup.expirationDate,
               imageUrl: sanityPopup.imageUrl ?? defaultPopup.imageUrl,
               imageRef: sanityPopup.imageRef,
-            });
+            };
+            setPopupSettings(popupData);
+            localStorage.setItem("mc_popup", JSON.stringify(popupData));
           } else {
             const storedPopup = localStorage.getItem("mc_popup");
             if (storedPopup) setPopupSettings(JSON.parse(storedPopup));
@@ -509,11 +514,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try {
           const sanityTelegram = await getTelegramSettings();
           if (sanityTelegram) {
-            setTelegramSettings({
+            const telegramData = {
               botToken: sanityTelegram.botToken ?? defaultTelegram.botToken,
               chatId: sanityTelegram.chatId ?? defaultTelegram.chatId,
               active: sanityTelegram.active ?? defaultTelegram.active,
-            });
+            };
+            setTelegramSettings(telegramData);
+            localStorage.setItem("mc_telegram", JSON.stringify(telegramData));
           } else {
             const storedTelegram = localStorage.getItem("mc_telegram");
             if (storedTelegram) setTelegramSettings(JSON.parse(storedTelegram));
