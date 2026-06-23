@@ -128,24 +128,25 @@ export default function Footer() {
         </div>
 
         {/* Bottom copyright */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 text-xs font-semibold">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 text-xs font-semibold border-t border-slate-800/60 pb-4">
           <p>© {currentYear} MEDİCAL CENTER Tibb Mərkəzi. Bütün hüquqlar qorunur.</p>
-          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-right">
-            <span className="text-slate-500">Tovuz, Azərbaycan</span>
-            <span className="text-slate-700 hidden sm:inline">|</span>
-            <p>
-              Sayt{" "}
-              <a
-                href="https://www.instagram.com/pixel_digital_services/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary hover:text-white underline transition-colors font-black uppercase"
-              >
-                Pixel Digital Services
-              </a>{" "}
-              tərəfindən hazırlanmışdır.
-            </p>
-          </div>
+          <span className="text-slate-500">Tovuz, Azərbaycan</span>
+        </div>
+
+        {/* Pixel Digital Services Special Attribution Bar */}
+        <div className="mt-4 pt-2 text-center text-xs font-medium tracking-wide">
+          <p className="inline-flex flex-wrap items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-slate-900/60 border border-slate-800/80 text-slate-400 shadow-inner">
+            <span>Sayt</span>
+            <a
+              href="https://www.instagram.com/pixel_digital_services/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#E3232A] hover:text-[#ff383e] font-extrabold underline transition-all duration-300 hover:scale-105 inline-flex items-center gap-1 uppercase tracking-wider"
+            >
+              Pixel Digital Services
+            </a>
+            <span>tərəfindən hazırlanmışdır.</span>
+          </p>
         </div>
 
       </div>
