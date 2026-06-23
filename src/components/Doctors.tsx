@@ -12,7 +12,8 @@ export default function Doctors() {
   // Dynamic visible cards based on screen size
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) setVisibleCards(2);
+      if (window.innerWidth < 640) setVisibleCards(1);
+      else if (window.innerWidth < 1024) setVisibleCards(2);
       else if (window.innerWidth < 1280) setVisibleCards(3);
       else setVisibleCards(4);
     };
