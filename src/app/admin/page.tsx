@@ -698,9 +698,37 @@ function AdminPanelContent() {
                                 </span>
                                 <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                                   {app.submitType === "whatsapp" ? (
-                                    <span className="text-emerald-600 font-bold">WhatsApp müraciəti</span>
+                                    <button
+                                      onClick={() => {
+                                        const text = `Salam, ${app.name}. Tovuz Medical Center-dən yazırıq. Sizin ${app.date} tarixinə olan randevunuz təsdiqləndi. Randevu kodunuz: ${app.id}. Hər hansı sualınız olarsa, bu nömrəyə yaza bilərsiniz.`;
+                                        const cleanPhone = app.phone.replace(/\D/g, "");
+                                        let formattedPhone = cleanPhone;
+                                        if (formattedPhone.startsWith("0")) {
+                                          formattedPhone = "994" + formattedPhone.substring(1);
+                                        } else if (!formattedPhone.startsWith("994")) {
+                                          formattedPhone = "994" + formattedPhone;
+                                        }
+                                        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, "_blank");
+                                        if (app.status === "pending") {
+                                          updateAppointmentStatus(app.id, "confirmed");
+                                        }
+                                      }}
+                                      className="text-emerald-600 font-bold hover:underline cursor-pointer text-left"
+                                    >
+                                      WhatsApp müraciəti
+                                    </button>
                                   ) : (
-                                    <span className="text-[#2B4C9B] font-bold">Zəng müraciəti</span>
+                                    <a
+                                      href={`tel:${app.phone}`}
+                                      onClick={() => {
+                                        if (app.status === "pending") {
+                                          updateAppointmentStatus(app.id, "confirmed");
+                                        }
+                                      }}
+                                      className="text-[#2B4C9B] font-bold hover:underline cursor-pointer"
+                                    >
+                                      Zəng müraciəti
+                                    </a>
                                   )}
                                 </span>
                               </div>
