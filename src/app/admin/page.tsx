@@ -687,7 +687,7 @@ function AdminPanelContent() {
                               </div>
                               <div>
                                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Xidmət / Həkim</span>
-                                <span className="text-sm font-bold block">{srv?.title || "Şöbə seçilməyib"}</span>
+                                <span className="text-sm font-bold block">{srv?.title || app.serviceId || "Şöbə seçilməyib"}</span>
                                 <span className="text-xs text-slate-600 font-semibold">{doc?.name || "Həkim seçilməyib"}</span>
                               </div>
                               <div>

@@ -45,7 +45,7 @@ export default function Hero() {
 
     // Send Telegram Notification to Admin via Server Action
     // (reads settings directly from Sanity — works on mobile even before client state loads)
-    const serviceName = services.find((s) => s.id === formData.serviceId)?.title || "Şöbə seçilməyib";
+    const serviceName = services.find((s) => s.id === formData.serviceId)?.title || formData.serviceId || "Şöbə seçilməyib";
     const origin = typeof window !== "undefined" ? window.location.origin : "https://medicalcentertovuz.vercel.app";
     
     try {
@@ -77,7 +77,7 @@ export default function Hero() {
 
     // WhatsApp redirect if chosen
     if (formData.submitType === "whatsapp") {
-      const serviceName = services.find(s => s.id === formData.serviceId)?.title || "Seçilməyib";
+      const serviceName = services.find(s => s.id === formData.serviceId)?.title || formData.serviceId || "Seçilməyib";
       const message = `🏥 *Yeni Randevu Müraciəti (Kod: ${randCode})*
 
 👤 Ad Soyad: ${formData.name}
@@ -261,11 +261,10 @@ export default function Hero() {
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 text-sm bg-white transition-all"
                     >
                       <option value="">Şöbə seçin (İstəyə bağlı)</option>
-                      {services.map((srv) => (
-                        <option key={srv.id} value={srv.id}>
-                          {srv.title}
-                        </option>
-                      ))}
+                      <option value="Laboratoriya">Laboratoriya</option>
+                      <option value="Rentgen">Rentgen</option>
+                      <option value="USM">USM</option>
+                      <option value="Fizioterapiya">Fizioterapiya</option>
                     </select>
                   </div>
 
