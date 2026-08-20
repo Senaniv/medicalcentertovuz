@@ -14,7 +14,7 @@ export default function Services() {
 
   if (!isLoaded) return null;
 
-  // Circle background color maps matching the reference design
+  // Circle background color maps matching the design
   const circleColors = [
     "bg-[#0284C7]", // KT - Sky Blue
     "bg-[#0D9488]", // Laboratoriya - Teal
@@ -26,20 +26,16 @@ export default function Services() {
     "bg-[#DB2777]", // Nevrologiya - Pink
     "bg-[#4F46E5]", // Urologiya - Indigo
     "bg-[#10B981]", // Ortopedik İçliklər - Emerald
-    "bg-[#E3232A]", // Randevu Al - Brand Red
   ];
 
-  // We append a virtual CTA card for quick appointments
-  const allCards = [
-    ...services,
-    {
-      id: "srv-appointment-cta",
-      title: "Randevu Al",
-      description: "Bizimlə əlaqə saxlayın və ya online randevu təyin edin.",
-      details: ["Online Qeydiyyat", "Sürətli Təsdiqləmə", "Növbəsiz Giriş"],
-      iconName: "Calendar",
-    }
-  ];
+  // Guarantee Kompüter Tomoqrafiyası (KT) is strictly the first card
+  const allCards = [...services].sort((a, b) => {
+    const isAKt = a.title.toLowerCase().includes("kompüter") || a.title.toLowerCase().includes("kt") || a.id === "srv-kt";
+    const isBKt = b.title.toLowerCase().includes("kompüter") || b.title.toLowerCase().includes("kt") || b.id === "srv-kt";
+    if (isAKt && !isBKt) return -1;
+    if (!isAKt && isBKt) return 1;
+    return 0;
+  });
 
   // Dynamically group cards into chunks of 4 for mobile carousel
   const mobileChunks: ServiceItem[][] = [];
@@ -76,12 +72,8 @@ export default function Services() {
     setActiveSlide(index);
   };
 
-  const handleCardClick = (card: any) => {
-    if (card.id === "srv-appointment-cta") {
-      scrollToAppointment();
-    } else {
-      setSelectedService(card);
-    }
+  const handleCardClick = (card: ServiceItem) => {
+    setSelectedService(card);
   };
 
   const scrollToAppointment = () => {
@@ -134,26 +126,21 @@ export default function Services() {
                       const cardIdx = allCards.findIndex(c => c.id === card.id);
                       const IconComponent = (Icons as any)[card.iconName] || Icons.Activity;
                       const circleColor = circleColors[cardIdx % circleColors.length];
-                      const isCtaCard = card.id === "srv-appointment-cta";
 
                       return (
                         <div
                           key={card.id}
                           onClick={() => handleCardClick(card)}
-                          className={`group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-2xl active:shadow-2xl transition-all duration-300 hover:-translate-y-1 active:-translate-y-1 cursor-pointer flex flex-col items-center justify-center text-center gap-4 aspect-square relative overflow-hidden ${
-                            isCtaCard ? "hover:border-secondary/20 hover:shadow-secondary/5 active:border-secondary/20 active:shadow-secondary/5" : "hover:border-primary/20 hover:shadow-primary/5 active:border-primary/20 active:shadow-primary/5"
-                          }`}
+                          className="group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-2xl active:shadow-2xl transition-all duration-300 hover:-translate-y-1 active:-translate-y-1 cursor-pointer flex flex-col items-center justify-center text-center gap-4 aspect-square relative overflow-hidden hover:border-primary/20 hover:shadow-primary/5 active:border-primary/20 active:shadow-primary/5"
                         >
                           {/* Medical Plus Watermark */}
-                          <div className={`absolute top-3 right-3 text-slate-100 transition-colors duration-300 ${
-                            isCtaCard ? "group-hover:text-secondary/10 group-active:text-secondary/10" : "group-hover:text-primary/10 group-active:text-primary/10"
-                          }`}>
+                          <div className="absolute top-3 right-3 text-slate-100 group-hover:text-primary/10 group-active:text-primary/10 transition-colors duration-300">
                             <Icons.Plus className="h-4 w-4" />
                           </div>
 
                           {/* Heartbeat EKG line watermark */}
                           <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none opacity-0 group-hover:opacity-10 group-active:opacity-10 transition-opacity duration-500 flex items-end">
-                            <svg className={`w-full h-8 ${isCtaCard ? "text-secondary" : "text-primary"}`} fill="none" viewBox="0 0 200 40" stroke="currentColor" strokeWidth="2.5" preserveAspectRatio="none">
+                            <svg className="w-full h-8 text-primary" fill="none" viewBox="0 0 200 40" stroke="currentColor" strokeWidth="2.5" preserveAspectRatio="none">
                               <path d="M0,20 L50,20 L55,10 L60,30 L65,20 L75,20 L80,5 L85,35 L90,20 L100,20 L105,15 L110,25 L115,20 L200,20" />
                             </svg>
                           </div>
@@ -164,9 +151,7 @@ export default function Services() {
                           </div>
 
                           {/* Centered Specialty/Service Name */}
-                          <h3 className={`text-xs font-extrabold tracking-tight leading-snug line-clamp-2 px-0.5 transition-colors duration-300 ${
-                            isCtaCard ? "text-secondary font-black" : "text-slate-800 group-hover:text-primary group-active:text-primary"
-                          }`}>
+                          <h3 className="text-xs font-extrabold tracking-tight leading-snug line-clamp-2 px-0.5 transition-colors duration-300 text-slate-800 group-hover:text-primary group-active:text-primary">
                             {card.title}
                           </h3>
                         </div>
@@ -206,31 +191,26 @@ export default function Services() {
             )}
           </div>
 
-          {/* DESKTOP VIEW: Normal static grid */}
+          {/* DESKTOP VIEW: Perfect 5-column static grid (10 cards = 5x2) */}
           <div className="hidden lg:grid lg:grid-cols-5 lg:gap-6">
             {allCards.map((card, idx) => {
               const IconComponent = (Icons as any)[card.iconName] || Icons.Activity;
               const circleColor = circleColors[idx % circleColors.length];
-              const isCtaCard = card.id === "srv-appointment-cta";
 
               return (
                 <div
                   key={card.id}
                   onClick={() => handleCardClick(card)}
-                  className={`group bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col items-center justify-center text-center gap-5 aspect-[9/10] sm:aspect-square relative overflow-hidden ${
-                    isCtaCard ? "hover:border-secondary/20 hover:shadow-secondary/5" : "hover:border-primary/20 hover:shadow-primary/5"
-                  }`}
+                  className="group bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col items-center justify-center text-center gap-5 aspect-[9/10] sm:aspect-square relative overflow-hidden hover:border-primary/20 hover:shadow-primary/5"
                 >
                   {/* Medical Plus Watermark */}
-                  <div className={`absolute top-4 right-4 text-slate-100 transition-colors duration-300 ${
-                    isCtaCard ? "group-hover:text-secondary/10" : "group-hover:text-primary/10"
-                  }`}>
+                  <div className="absolute top-4 right-4 text-slate-100 group-hover:text-primary/10 transition-colors duration-300">
                     <Icons.Plus className="h-4.5 w-4.5" />
                   </div>
 
                   {/* Heartbeat EKG line watermark */}
                   <div className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none opacity-0 group-hover:opacity-10 transition-opacity duration-500 flex items-end">
-                    <svg className={`w-full h-10 ${isCtaCard ? "text-secondary" : "text-primary"}`} fill="none" viewBox="0 0 200 40" stroke="currentColor" strokeWidth="2.5" preserveAspectRatio="none">
+                    <svg className="w-full h-10 text-primary" fill="none" viewBox="0 0 200 40" stroke="currentColor" strokeWidth="2.5" preserveAspectRatio="none">
                       <path d="M0,20 L50,20 L55,10 L60,30 L65,20 L75,20 L80,5 L85,35 L90,20 L100,20 L105,15 L110,25 L115,20 L200,20" />
                     </svg>
                   </div>
@@ -241,9 +221,7 @@ export default function Services() {
                   </div>
 
                   {/* Centered Specialty/Service Name */}
-                  <h3 className={`text-base font-extrabold tracking-tight leading-snug line-clamp-2 px-1 transition-colors duration-300 ${
-                    isCtaCard ? "text-secondary font-black" : "text-slate-800 group-hover:text-primary"
-                  }`}>
+                  <h3 className="text-base font-extrabold tracking-tight leading-snug line-clamp-2 px-1 transition-colors duration-300 text-slate-800 group-hover:text-primary">
                     {card.title}
                   </h3>
                 </div>
