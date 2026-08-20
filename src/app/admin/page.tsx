@@ -1358,9 +1358,10 @@ function AdminPanelContent() {
                           onChange={(e) => setSrvForm({ ...srvForm, iconName: e.target.value })}
                           className="w-full px-3.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 text-sm bg-white"
                         >
+                          <option value="Scan">Scan (KT - Kompüter Tomoqrafiyası)</option>
                           <option value="Activity">Activity (USM)</option>
                           <option value="FlaskConical">FlaskConical (Laboratoriya)</option>
-                          <option value="Radio">Radio (KT/Rentgen)</option>
+                          <option value="Radio">Radio (Rentgen/Radiologiya)</option>
                           <option value="Accessibility">Accessibility (Fizioterapiya)</option>
                           <option value="HeartHandshake">HeartHandshake (Ginekologiya)</option>
                           <option value="HeartPulse">HeartPulse (Kardiologiya)</option>

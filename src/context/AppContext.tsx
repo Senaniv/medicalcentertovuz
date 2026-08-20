@@ -165,6 +165,19 @@ const defaultDoctors: Doctor[] = [
 
 const defaultServices: ServiceItem[] = [
   {
+    id: "srv-kt",
+    title: "Kompüter Tomoqrafiyası (KT)",
+    description: "32 kəsikli müasir KT cihazı və peşəkar komandamızla sürətli, dəqiq və etibarlı diaqnostika.",
+    details: [
+      "32 kəsikli müasir Kompüter Tomoqrafiya (KT) cihazı",
+      "Yüksək dəqiqlik və ən incə kəsiklərlə daxili orqanların görüntülənməsi",
+      "Peşəkar Həkim Nəzarəti: Dr. Aqil Cəfərov",
+      "Bölgədən ayrılmadan operativ və təhlükəsiz müayinə",
+      "Minimal şüalanma ilə dəqiq nəticələr"
+    ],
+    iconName: "Scan",
+  },
+  {
     id: "srv-1",
     title: "Laboratoriya",
     description: "Tam avtomatlaşdırılmış müasir cihazlarla yüksək dəqiqlikli analizlər.",
@@ -180,9 +193,9 @@ const defaultServices: ServiceItem[] = [
   },
   {
     id: "srv-3",
-    title: "Radiologiya",
-    description: "Kompüter Tomoqrafiyası və rəqəmsal Rentgen xidmətləri.",
-    details: ["KT (Kompüter Tomoqrafiyası)", "Rəqəmsal Rentgen (X-Ray)", "Minimal şüalanma ilə dəqiq diaqnoz"],
+    title: "Radiologiya & Rentgen",
+    description: "Rəqəmsal Rentgen və radioloji diaqnostika xidmətləri.",
+    details: ["Rəqəmsal Rentgen (X-Ray)", "Skelet və döş qəfəsi orqanlarının müayinəsi", "Minimal şüalanma ilə dəqiq diaqnoz"],
     iconName: "Radio",
   },
   {
@@ -230,6 +243,15 @@ const defaultServices: ServiceItem[] = [
 ];
 
 const defaultBlogs: BlogItem[] = [
+  {
+    id: "blog-kt",
+    title: "Artıq Tovuz Medical Center-də: 32 kəsikli Kompüter Tomoqrafiyası (KT)",
+    summary: "Bölgədən ayrılmadan ən müasir 32 kəsikli KT cihazı ilə yüksək dəqiqlikli diaqnostika və peşəkar həkim nəzarəti.",
+    content: "Tovuz Medical Center-də ən müasir texnologiyaya malik 32 kəsikli Kompüter Tomoqrafiya (KT) cihazı artıq xidmətinizdədir!\n\nMüasir kompüter tomoqrafiya cihazımız və peşəkar komandamız sayəsində müayinələr sürətli, dəqiq və etibarlı nəticələrlə həyata keçirilir.\n\nƏsas Üstünlüklərimiz:\n• Yüksək Dəqiqlik və Sürət: Bədənin daxili orqan və toxumalarının ən incə kəsiklərlə dəqiq, sürətli və etibarlı görüntülənməsi.\n• Peşəkar Həkim Nəzarəti: Müayinələr təcrübəli mütəxəssisimiz Dr. Aqil Cəfərov və peşəkar komandamız tərəfindən həyata keçirilir.\n• Bölgədən Ayrılmadan Müayinə: Artıq KT müayinəsi üçün Gəncə və ya digər uzaq şəhərlərə getməyə ehtiyac yoxdur; bütün proseslər birbaşa mərkəzimizdə təhlükəsiz şəkildə icra olunur.\n\n✅ Yüksək dəqiqlikli diaqnostika\n✅ Peşəkar həkim heyəti\n✅ Müasir texnologiya\n✅ Rahat və operativ xidmət\n\nSağlamlığınızı etibarlı əllərə həvalə edin!\n📍 Tovuz Medical Center",
+    date: "2026-08-20",
+    author: "Dr. Aqil Cəfərov",
+    readTime: "3 dəq",
+  },
   {
     id: "blog-1",
     title: "Düzgün USM müayinəsinin əhəmiyyəti",

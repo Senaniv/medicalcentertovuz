@@ -261,6 +261,7 @@ export default function Hero() {
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 text-sm bg-white transition-all"
                     >
                       <option value="">Şöbə seçin (İstəyə bağlı)</option>
+                      <option value="Kompüter Tomoqrafiyası (KT)">Kompüter Tomoqrafiyası (KT)</option>
                       <option value="Laboratoriya">Laboratoriya</option>
                       <option value="Rentgen">Rentgen</option>
                       <option value="USM">USM</option>

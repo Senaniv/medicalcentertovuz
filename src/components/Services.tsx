@@ -16,11 +16,12 @@ export default function Services() {
 
   // Circle background color maps matching the reference design
   const circleColors = [
+    "bg-[#0284C7]", // KT - Sky Blue
     "bg-[#0D9488]", // Laboratoriya - Teal
-    "bg-[#0284C7]", // USM - Sky Blue
+    "bg-[#3B82F6]", // USM - Blue
     "bg-[#8B5CF6]", // Radiologiya - Purple
     "bg-[#F97316]", // Fizioterapiya - Orange
-    "bg-[#2563EB]", // Ginekologiya - Blue
+    "bg-[#2563EB]", // Ginekologiya - Deep Blue
     "bg-[#EF4444]", // Kardiologiya - Red
     "bg-[#DB2777]", // Nevrologiya - Pink
     "bg-[#4F46E5]", // Urologiya - Indigo
@@ -28,7 +29,7 @@ export default function Services() {
     "bg-[#E3232A]", // Randevu Al - Brand Red
   ];
 
-  // We append a virtual 10th card to make a perfect 5x2 grid (10 cards total)
+  // We append a virtual CTA card for quick appointments
   const allCards = [
     ...services,
     {
@@ -39,6 +40,12 @@ export default function Services() {
       iconName: "Calendar",
     }
   ];
+
+  // Dynamically group cards into chunks of 4 for mobile carousel
+  const mobileChunks: ServiceItem[][] = [];
+  for (let i = 0; i < allCards.length; i += 4) {
+    mobileChunks.push(allCards.slice(i, i + 4) as ServiceItem[]);
+  }
 
   // Scroll listener for mobile carousel dots
   const handleScroll = () => {
@@ -120,11 +127,7 @@ export default function Services() {
               onScroll={handleMobileScroll}
               className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6"
             >
-              {[
-                allCards.slice(0, 4),
-                allCards.slice(4, 8),
-                allCards.slice(8, 10)
-              ].map((chunk, slideIdx) => (
+              {mobileChunks.map((chunk, slideIdx) => (
                 <div key={slideIdx} className="w-full flex-shrink-0 snap-center px-1">
                   <div className="grid grid-cols-2 gap-4">
                     {chunk.map((card) => {
@@ -175,30 +178,32 @@ export default function Services() {
             </div>
 
             {/* Slide Pagination Dots */}
-            <div className="flex justify-center items-center gap-1.5 mt-4">
-              {[0, 1, 2].map((idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    if (mobileScrollRef.current) {
-                      mobileScrollRef.current.scrollTo({
-                        left: idx * mobileScrollRef.current.clientWidth,
-                        behavior: "smooth"
-                      });
-                      setActiveSlide(idx);
-                    }
-                  }}
-                  className="p-2 -mx-1 focus:outline-none cursor-pointer"
-                  aria-label={`Go to slide ${idx + 1}`}
-                >
-                  <div
-                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                      activeSlide === idx ? "w-6 bg-primary" : "w-2.5 bg-slate-300"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
+            {mobileChunks.length > 1 && (
+              <div className="flex justify-center items-center gap-1.5 mt-4">
+                {mobileChunks.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (mobileScrollRef.current) {
+                        mobileScrollRef.current.scrollTo({
+                          left: idx * mobileScrollRef.current.clientWidth,
+                          behavior: "smooth"
+                        });
+                        setActiveSlide(idx);
+                      }
+                    }}
+                    className="p-2 -mx-1 focus:outline-none cursor-pointer"
+                    aria-label={`Go to slide ${idx + 1}`}
+                  >
+                    <div
+                      className={`h-2.5 rounded-full transition-all duration-300 ${
+                        activeSlide === idx ? "w-6 bg-primary" : "w-2.5 bg-slate-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* DESKTOP VIEW: Normal static grid */}
