@@ -121,10 +121,10 @@ function AdminPanelContent() {
   // Sync form states when settings load from Sanity
   useEffect(() => {
     if (isLoaded) {
-      if (popupSettings && popupSettings.imageUrl) {
-        setPopupImageUrl(popupSettings.imageUrl);
-        setPopupExpDate(popupSettings.expirationDate);
-        setPopupActive(popupSettings.active);
+      if (popupSettings) {
+        setPopupImageUrl(popupSettings.imageUrl || "");
+        setPopupExpDate(popupSettings.expirationDate || "2026-12-31");
+        setPopupActive(popupSettings.active ?? true);
       }
       if (telegramSettings) {
         setBotTokenInput(telegramSettings.botToken);
@@ -173,8 +173,10 @@ function AdminPanelContent() {
 
   // Check if popup expired
   const isPopupExpired = () => {
+    const targetDate = popupExpDate || popupSettings.expirationDate;
+    if (!targetDate) return false;
     const cur = new Date();
-    const exp = new Date(popupSettings.expirationDate);
+    const exp = new Date(targetDate);
     exp.setHours(23, 59, 59, 999);
     return cur > exp;
   };
