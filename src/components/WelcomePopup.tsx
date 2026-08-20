@@ -33,6 +33,23 @@ export default function WelcomePopup() {
     setIsOpen(false);
   };
 
+  const handleAppointmentClick = () => {
+    setIsOpen(false);
+    const element = document.getElementById("appointment");
+    if (element) {
+      const offset = 80;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -53,7 +70,7 @@ export default function WelcomePopup() {
           </span>
           <button
             onClick={handleClose}
-            className="p-1 rounded-full text-slate-400 hover:text-[#E3232A] hover:bg-slate-100 transition-colors focus:outline-none"
+            className="p-1 rounded-full text-slate-400 hover:text-[#E3232A] hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
             aria-label="Close welcome screen"
           >
             <X className="h-5 w-5" />
@@ -81,9 +98,15 @@ export default function WelcomePopup() {
         <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-[#F8FAFC]">
           <button
             onClick={handleClose}
-            className="px-5 py-2 rounded-lg bg-[#2B4C9B] hover:bg-[#1f3770] text-white font-bold text-sm shadow-md transition-colors"
+            className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-colors cursor-pointer"
           >
-            Keçid et
+            Bağla
+          </button>
+          <button
+            onClick={handleAppointmentClick}
+            className="px-6 py-2 rounded-xl bg-secondary hover:bg-secondary-hover text-white font-bold text-sm shadow-md transition-all duration-200 active:scale-95 cursor-pointer flex items-center gap-1.5"
+          >
+            Qəbula yazıl
           </button>
         </div>
       </div>
